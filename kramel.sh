@@ -51,7 +51,7 @@ export PROCS
 export COMPILER=clang
 
 # Module building support. Set 1 to enable. | Set 0 to disable.
-export MODULE=0
+export MODULE=1
 
 # Requirements
 if [ "${ci}" != 1 ]; then
@@ -234,9 +234,11 @@ mod() {
     echo -e "\n\e[1;93m[*] Building Modules! \e[0m"
     mkdir -p "${KDIR}"/out/modules
     make "${MAKE[@]}" CONFIG_SECTION_MISMATCH_WARN_ONLY=y modules_prepare
-    make -j"$PROCS" "${MAKE[@]}" CONFIG_SECTION_MISMATCH_WARN_ONLY=y modules INSTALL_MOD_PATH="${KDIR}"/out/modules
-    make "${MAKE[@]}" CONFIG_SECTION_MISMATCH_WARN_ONLY=y modules_install INSTALL_MOD_PATH="${KDIR}"/out/modules
+    make -j"$PROCS" "${MAKE[@]}" CONFIG_SECTION_MISMATCH_WARN_ONLY=y INSTALL_MOD_STRIP=1 modules INSTALL_MOD_PATH="${KDIR}"/out/modules
+    make "${MAKE[@]}" CONFIG_SECTION_MISMATCH_WARN_ONLY=y modules_install INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH="${KDIR}"/out/modules
     find "${KDIR}"/out/modules -type f -iname '*.ko' -exec cp {} "${KDIR}"/modules/system/lib/modules/ \;
+    sed -i '11s/#\s*//; 11s/*.ko/wlan.ko/' "${KDIR}"/modules/service.sh
+    sed -i '33s/false/true/' "${KDIR}"/modules/install.sh
     cd "${KDIR}"/modules || exit 1
     zip -r9 "${modn}".zip . -x ".git*" -x "README.md" -x "LICENSE" -x "*.zip"
     cd ../
